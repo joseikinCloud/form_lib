@@ -96,7 +96,7 @@ class RadioButton {
     this.buttonList = {};
     this.reverseList = {};
     this.mark = '◯';
-    this.unmark = ' ';
+    this.unmark = '';
   }
   getAllButtonNameList() {
     return Object.keys(this.buttonList);
@@ -127,7 +127,7 @@ class RadioButton {
   }
   getRadioButtonValue(index) {
     return Object.keys(this.reverseList).find(num => {
-      return getV(this.reverseList[num], index) != this.unmark;
+      return getV(this.reverseList[num], index) == this.mark;
     });
   }
 }
