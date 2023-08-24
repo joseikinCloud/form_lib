@@ -96,7 +96,7 @@ class RadioButton {
     this.buttonList = {};
     this.reverseList = {};
     this.mark = '◯';
-    this.unmark = '';
+    this.unmark = '​';
   }
   getAllButtonNameList() {
     return Object.keys(this.buttonList);
@@ -207,6 +207,8 @@ class CompanyMaster {
       JGYNSHBIRTHDAY_D: 'JGYNSHBIRTHDAY_D',
       TENANT_ID: 'TENANT_ID',
       CREATED_TENANT_ID: 'CREATED_TENANT_ID',
+      ROUKI_ID: 'LSIO_ID',
+      ROUKI_NAME: 'LSIO'
     };
   }
   initialize() {
@@ -219,9 +221,18 @@ class CompanyMaster {
     return this[objPrefix][objSuffix];
   }
   getMaster(name) {
+    if (!inputObjects.objExists(this.toMasterName(name))) {
+      console.warn(`${this.toMasterName(name)}は存在しないオブジェクト`);
+      return;
+    }
     return getV(this.toMasterName(name));
   }
   setMaster(name) {
+    const exists = [name, this.toMasterName(name)].filter(v => !inputObjects.objExists(v));
+    if (exists.length > 0) {
+      exists.forEach(v => console.warn(`${v}は存在しないオブジェクト`));
+      return;
+    }
     setV(name, this.getMaster(name));
   }
   getAllObjNameByType(type) {
