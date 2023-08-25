@@ -600,3 +600,16 @@ function visualizeObj(captionList = [], inputList = [], labelList = []) {
 function makeArray(num, prefix, first, deference) {
   return [...Array(num)].map((_, i) => `${prefix}${first + i * deference} `);
 }
+
+function showDocInfo() {
+  console.log(`フォーム名：${$('input[name="jobName"]').val()} `);
+  console.log(`ライブラリ名：${$('script[src*="form_lib"]').attr('src').split('/').find(v => v.indexOf('form_lib_') > -1).split('?')[0]} `);
+}
+
+function initializeInstances() {
+  inputObjects.initialize();
+  radioButtons.initialize();
+  companyMaster.initialize();
+  documentEmployees.initialize();
+  documentEmployeesContents.initialize();
+}
