@@ -24,19 +24,25 @@ class InputObjects {
     return this.getObjByName(name).objList;
   }
   getLengthOfPageListByName(name) {
-    return this.getObjByName(name).pageList.filter(v => v.length != 0).length;
+    return this.getObjByName(name).pageList.filter(v => v.length !== 0).length;
   }
   getIdsbyPage(name, page) {
     if (this.getObjByName(name).pageList[page] === undefined) throw new Error(`${page} ページ目に ${name} は存在しない`);
     return this.getObjByName(name).pageList[page];
   }
   getIdsByIndex(name, index) {
-    const list = this.getObjByName(name).pageList.filter(v => v.length != 0);
+    const list = this.getObjByName(name).pageList.filter(v => v.length !== 0);
     if (list[index] === undefined) throw new Error(`${name} が存在するページ数は ${index + 1} より少ない`);
     return list[index];
   }
   objExists(name) {
-    return this.list[name] != undefined;
+    return this.list[name] !== undefined;
+  }
+  getIndexById(id) {
+    const splitId = id.split('_');
+    splitId.shift(); splitId.pop(); splitId.pop();
+    const objName = splitId.join('_');
+    return this.list[objName].getIndexById(id);
   }
 }
 
@@ -49,6 +55,9 @@ class InputObjectsByName {
   register(id, page) {
     this.objList.push(id);
     this.pageList[page].push(id);
+  }
+  getIndexById(id) {
+    return this.pageList.filter(v => v.length !== 0).findIndex(arr => arr.some(v => v === id));
   }
 }
 
@@ -74,17 +83,17 @@ class RadioButtons {
     const splitName = name.split('_');
     const end = splitName.pop();
     const groupName = splitName.join('_');
-    const preState = getV(...[name, index].filter(v => v != undefined));
+    const preState = getV(...[name, index].filter(v => v !== undefined));
     this.list[groupName].getAllButtonNameList().forEach(buttonName => {
-      const tmp = [buttonName, index, this.list[groupName].unmark].filter(v => v != undefined);
+      const tmp = [buttonName, index, this.list[groupName].unmark].filter(v => v !== undefined);
       setV(...tmp);
     });
-    if (preState == this.list[groupName].mark) return;
-    const tmp = [name, index, this.list[groupName].mark].filter(v => v != undefined);
+    if (preState === this.list[groupName].mark) return;
+    const tmp = [name, index, this.list[groupName].mark].filter(v => v !== undefined);
     setV(...tmp);
   }
   radioExists(name) {
-    return this?.list?.[name] != undefined;
+    return this?.list?.[name] !== undefined;
   }
   setMark(name, mark, unmark) {
     this.list[name].setMark(mark, unmark);
@@ -113,10 +122,10 @@ class RadioButton {
   }
   setMark(mark, unmark) {
     this.mark = mark;
-    if (unmark != '') this.unmark = unmark;
+    if (unmark !== '') this.unmark = unmark;
   }
   buttonExists(num) {
-    return this.reverseList[num] != undefined;
+    return this.reverseList[num] !== undefined;
   }
   synchronizeButton(index) {
     this.getAllButtonNameList().forEach(name => {
@@ -127,12 +136,12 @@ class RadioButton {
   }
   getRadioButtonValue(index) {
     return Object.keys(this.reverseList).find(num => {
-      return getV(this.reverseList[num], index) == this.mark;
+      return getV(this.reverseList[num], index) === this.mark;
     });
   }
   setCorrectMark() {
     const isWrong = this.getAllButtonNameList().map(name => {
-      return getV(name) == this.mark;
+      return getV(name) === this.mark;
     }).filter(v => v).length > 1;
     if (isWrong) this.getAllButtonNameList().forEach(name => {
       const init = $(getSelector(name)).attr('data-init-value');
@@ -246,7 +255,7 @@ class CompanyMaster {
   }
   getAllObjNameByType(type) {
     return Object.keys(this[type]).map(key => {
-      return `${type == 'OTHER' ? '' : (type + '_')}${key}`;
+      return `${type === 'OTHER' ? '' : (type + '_')}${key}`;
     });
   }
   setAllMasterByType(type) {
@@ -281,10 +290,10 @@ class DocumentEmployees {
   contains(index, key) {
     const splitKey = key.split('_'); splitKey.pop();
     const keyPrefix = splitKey.join('_');
-    return this.list[index]?.[keyPrefix] != undefined || this.list[index]?.[key] != undefined;
+    return this.list[index]?.[keyPrefix] !== undefined || this.list[index]?.[key] !== undefined;
   }
   containsId(id) {
-    return this.list.some(v => v.id == id);
+    return this.list.some(v => v.id === id);
   }
   makeIdList() {
     return this.list.map(v => {
@@ -294,20 +303,20 @@ class DocumentEmployees {
   getEmployeesValue(index, key) {
     const splitKey = key.split('_'); splitKey.pop();
     const keyPrefix = splitKey.join('_');
-    const haveSplit = this.splitKeyValue.some(v => v == keyPrefix);
+    const haveSplit = this.splitKeyValue.some(v => v === keyPrefix);
     if (haveSplit) return this.splitEmployeesValue(index, key);
-    return this.list[index]?.[key] == undefined ? '' : this.list[index][key];
+    return this.list[index]?.[key] === undefined ? '' : this.list[index][key];
   }
   splitEmployeesValue(index, key) {
     const splitKey = key.split('_');
     const keyNum = +splitKey.pop();
     const keyName = splitKey.join('_');
     const notSplitValue = this.getEmployeesValue(index, keyName);
-    if (notSplitValue == '') return '';
-    if (keyName == 'birthday' || keyName == 'hire_date') {
+    if (notSplitValue === '') return '';
+    if (keyName === 'birthday' || keyName === 'hire_date') {
       return toWareki(notSplitValue)[keyNum];
     }
-    if (keyName == 'employment_insurance_number') {
+    if (keyName === 'employment_insurance_number') {
       return notSplitValue.split('-')[keyNum];
     }
     return '';
@@ -337,15 +346,17 @@ class DocumentEmployeesContents {
       [...Array(employees.max ?? 0)].forEach((_, i) => {
         let obj = employees.list[key](i);
         if (Array.isArray(obj)) obj = obj[0];
-        if (obj.name != undefined && (obj.page == undefined || obj.page < getP(obj.name)))
+        if (obj.name !== undefined && (obj.page === undefined || obj.page < getP(obj.name)))
           previousDocEmpContents[i][key] = getV(obj.name, obj.page);
       });
     });
     // DOCUMENT_EMPLOYEES_LIST に存在しない ID のデータを削除
-    const docEmpContents = previousDocEmpContents.filter(v => v.id == undefined || documentEmployees.containsId(v.id));
+    const subDocEmpcontents = previousDocEmpContents.filter(v => v.id === undefined || documentEmployees.containsId(v.id));
+    const sublength = previousDocEmpContents.length - subDocEmpcontents.length;
+    const docEmpContents = subDocEmpcontents.concat([...Array(sublength)].map(v => { return {}; }));
     // DOCUMENT_EMPLOYEES_LIST の内容で上書き
-    docEmpContents.forEach((docEmp, i) => {
-      Object.keys(docEmp).forEach(key => {
+    docEmpContents.forEach((_, i) => {
+      Object.keys(employees.list).forEach(key => {
         if (documentEmployees.contains(i, key))
           docEmpContents[i][key] = documentEmployees.getEmployeesValue(i, key);
       });
@@ -353,7 +364,7 @@ class DocumentEmployeesContents {
     this.list = docEmpContents;
   }
   getEmployeesValue(index, key) {
-    if (this.list[index]?.[key] == undefined) return '';
+    if (this.list[index]?.[key] === undefined) return '';
     return this.list[index][key];
   }
   countElm() {
@@ -375,7 +386,7 @@ function getV(name, index) {
   return $('#' + id).val();
 }
 function setV(...args) { // (name, val) or (name, index, val)
-  const target = args.length == 2 || (args.length == 3 && args[1] == undefined) ? inputObjects.getAllIds(args[0]) : inputObjects.getIdsByIndex(args[0], args[1]);
+  const target = args.length === 2 || (args.length === 3 && args[1] === undefined) ? inputObjects.getAllIds(args[0]) : inputObjects.getIdsByIndex(args[0], args[1]);
   const val = args.slice(-1)[0];
   target.forEach(id => {
     if (isCheckBox(id)) {
@@ -390,16 +401,16 @@ function setV(...args) { // (name, val) or (name, index, val)
 function getMaster(name) { return companyMaster.getMaster(name); }
 function getN(name, i) {
   const hankakuNumber = Number(toHan(getV(name, i)).replace(/,/g, ''));
-  if (getV(name, i) == '' || isNaN(hankakuNumber)) return 0;
+  if (getV(name, i) === '' || isNaN(hankakuNumber)) return 0;
   setV(name, i, hankakuNumber.toLocaleString('ja-JP'));
   return hankakuNumber;
 }
 function setN(...args) {
   if (args.length > 3) throw new Error(`引数が多すぎます。`);
   const name = args[0];
-  const index = args.length == 3 ? args[1] : undefined;
+  const index = args.length === 3 ? args[1] : undefined;
   const val = args.slice(-1)[0];
-  const tmp = [name, index, val == '' ? '' : Number(val).toLocaleString('ja-JP')].filter(v => v != undefined);
+  const tmp = [name, index, val === '' ? '' : Number(val).toLocaleString('ja-JP')].filter(v => v !== undefined);
   if (isNaN(Number(val))) throw new Error(`${name} にセットしようとしている ${val} は数値ではありません`);
   setV(...tmp);
 }
@@ -408,10 +419,10 @@ function getP(name) {
 }
 function toHan(x) { return x.replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[－]/g, "-"); }
 function isCheckBox(id) {
-  return $('#' + id).prop('tagName') == 'INPUT' && $('#' + id).attr('type') == 'checkbox';
+  return $('#' + id).prop('tagName') === 'INPUT' && $('#' + id).attr('type') === 'checkbox';
 }
 function getIds(name, index = undefined) {
-  if (index == undefined) return inputObjects.getAllIds(name);
+  if (index === undefined) return inputObjects.getAllIds(name);
   return inputObjects.getIdsByIndex(name, index);
 }
 function getSelector(name, index = undefined) {
@@ -431,8 +442,14 @@ function getCheckValue(name, index = 0) {
 function setCheckValue(...args) {
   setV(...args);
 }
-function getNumObj(name) {
-  return inputObjects.getObjByName(name).pageList.filter(v => v.length != 0).length;
+function getIndexById(id) {
+  return inputObjects.getIndexById(id);
+}
+function getIndexByEvt(evt) {
+  return inputObjects.getIndexById(evt.currentTarget.id);
+}
+function getValueByEvt(evt) {
+  return $('#' + evt.currentTarget.id).val();
 }
 
 function toWareki(dateString) {
@@ -442,7 +459,7 @@ function toWareki(dateString) {
 }
 function calcPeriod(yearId, monthId, dayId, subMonth, subDay, type = 2) {
   const args = [yearId, monthId, dayId, subMonth, subDay];
-  const isValid = args.reduce((acc, cur) => acc || cur == undefined, false);
+  const isValid = args.reduce((acc, cur) => acc || cur === undefined, false);
   if (isValid) return '';
   const toNumber = fieldId => {
     if (Number.isInteger(fieldId)) return fieldId;
@@ -452,15 +469,15 @@ function calcPeriod(yearId, monthId, dayId, subMonth, subDay, type = 2) {
   };
   const japanese2Christian = (yearId, type = 2) => {
     if (Number.isInteger(yearId)) return yearId;
-    if ([0, 1988, 2018][type] == null) return;
-    return (getV(yearId) == '元' ? 1 : toNumber(yearId)) + [0, 1988, 2018][type];
+    if ([0, 1988, 2018][type] === null) return;
+    return (getV(yearId) === '元' ? 1 : toNumber(yearId)) + [0, 1988, 2018][type];
   };
   const toDoubleDigits = x => ('0' + x).slice(-2);
   const toDateField = dt => [dt.getFullYear(), toDoubleDigits(dt.getMonth() + 1), toDoubleDigits(dt.getDate())].join('/');
   const year = japanese2Christian(yearId, type);
   const month = toNumber(monthId);
   const day = toNumber(dayId);
-  const ymdIsZero = [year, month, day].map(ymd => ymd != 0).reduce((acc, cur) => acc && cur);
+  const ymdIsZero = [year, month, day].map(ymd => ymd !== 0).reduce((acc, cur) => acc && cur);
   if (!ymdIsZero) return '';
   const refDt = new Date(year, month - 1, day + subDay);
   let result;
@@ -491,7 +508,7 @@ function calcPeriodFromDate(dateId, subMonth = 0, subDay = 0) {
 
 function calcSubDate(yearId, monthId, dayId, subMonth, subDay, type = 2) {
   const args = [yearId, monthId, dayId, subMonth, subDay];
-  const isValid = args.reduce((acc, cur) => acc || cur == undefined, false);
+  const isValid = args.reduce((acc, cur) => acc || cur === undefined, false);
   if (isValid) return '';
   const toNumber = fieldId => {
     if (Number.isInteger(fieldId)) return fieldId;
@@ -501,15 +518,15 @@ function calcSubDate(yearId, monthId, dayId, subMonth, subDay, type = 2) {
   };
   const japanese2Christian = (yearId, type = 2) => {
     if (Number.isInteger(yearId)) return yearId;
-    if ([0, 1988, 2018][type] == null) return;
-    return (getV(yearId) == '元' ? 1 : toNumber(yearId)) + [0, 1988, 2018][type];
+    if ([0, 1988, 2018][type] === null) return;
+    return (getV(yearId) === '元' ? 1 : toNumber(yearId)) + [0, 1988, 2018][type];
   };
   const toDoubleDigits = x => ('0' + x).slice(-2);
   const toDateField = dt => [dt.getFullYear(), toDoubleDigits(dt.getMonth() + 1), toDoubleDigits(dt.getDate())].join('/');
   const year = japanese2Christian(yearId, type);
   const month = toNumber(monthId);
   const day = toNumber(dayId);
-  const ymdIsZero = [year, month, day].map(ymd => ymd != 0).reduce((acc, cur) => acc && cur);
+  const ymdIsZero = [year, month, day].map(ymd => ymd !== 0).reduce((acc, cur) => acc && cur);
   if (!ymdIsZero) return '';
   const result = new Date(year, month - 1 + subMonth, day + subDay);
   return toDateField(result);
@@ -532,22 +549,22 @@ function onLoadCompanyMaster() {
   setV('JGYNSHBIRTHDAY_M', getMaster('JGYNSHBIRTHDAY').slice(4, 6));
   setV('JGYNSHBIRTHDAY_D', getMaster('JGYNSHBIRTHDAY').slice(6, 8));
   Object.keys(companyMaster).forEach(type => {
-    if (type == 'SHRSH'
-      && (getMaster('TENANT_ID') == getMaster('CREATED_TENANT_ID')
+    if (type === 'SHRSH'
+      && (getMaster('TENANT_ID') === getMaster('CREATED_TENANT_ID')
         || inputObjects.objExists('IS_MANUAL') && getCheckValue('IS_MANUAL'))
     ) return;
     companyMaster.setAllMasterByType(type);
   });
-  if (getMaster('TENANT_ID') != getMaster('CREATED_TENANT_ID') && inputObjects.objExists('IS_MANUAL')) {
-    if (!getCheckValue('IS_MANUAL')) setV('SHRSH_NUM', getV('LSS_ATTORNEY_REGIST_NUMBER') == '' ? getV('S_LSS_ATTORNEY_REGIST_NUMBER') : getV('LSS_ATTORNEY_REGIST_NUMBER'));
+  if (getMaster('TENANT_ID') !== getMaster('CREATED_TENANT_ID') && inputObjects.objExists('IS_MANUAL')) {
+    if (!getCheckValue('IS_MANUAL')) setV('SHRSH_NUM', getV('LSS_ATTORNEY_REGIST_NUMBER') === '' ? getV('S_LSS_ATTORNEY_REGIST_NUMBER') : getV('LSS_ATTORNEY_REGIST_NUMBER'));
     $(getSelector('IS_MANUAL')).on('click', () => {
       if (!getCheckValue('IS_MANUAL')) {
         companyMaster.setAllMasterByType('SHRSH');
-        setV('SHRSH_NUM', getV('LSS_ATTORNEY_REGIST_NUMBER') == '' ? getV('S_LSS_ATTORNEY_REGIST_NUMBER') : getV('LSS_ATTORNEY_REGIST_NUMBER'));
+        setV('SHRSH_NUM', getV('LSS_ATTORNEY_REGIST_NUMBER') === '' ? getV('S_LSS_ATTORNEY_REGIST_NUMBER') : getV('LSS_ATTORNEY_REGIST_NUMBER'));
       }
     });
   }
-  if (inputObjects.objExists('LSIO') && inputObjects.objExists('ROUKI_NAME') && getV('LSIO') != '') setV('ROUKI_NAME', getV('LSIO').split('労働基準監督署')[0]);
+  if (inputObjects.objExists('LSIO') && inputObjects.objExists('ROUKI_NAME') && getV('LSIO') !== '') setV('ROUKI_NAME', getV('LSIO').split('労働基準監督署')[0]);
 }
 function onLoadRadioButton() {
   radioButtons.getAllGroupNameList().forEach(groupName => {
@@ -584,7 +601,7 @@ function onLoadDocumentEmployeesList(employees) {
       let objList = employees.list[key](i);
       if (!Array.isArray(objList)) objList = [objList];
       objList.forEach(obj => {
-        if (obj.page < inputObjects.getLengthOfPageListByName(obj.name) || obj.page == undefined)
+        if (obj.page < inputObjects.getLengthOfPageListByName(obj.name) || obj.page === undefined)
           setV(obj.name, obj.page, docEmpContents.getEmployeesValue(i, key));
       });
     });
@@ -617,7 +634,7 @@ function visualizeObj(captionList = [], inputList = [], labelList = []) {
     const inputObj = inputList.map(n => getSelector(n)).join().split(',');
     const lableObj = labelList.map(n => getLabelSelector(n));
     const names = [captionObj, inputObj, lableObj].flat();
-    const result = names.map(name => [...ss.cssRules].find(rule => rule.selectorText && rule.selectorText.indexOf(name) != -1));
+    const result = names.map(name => [...ss.cssRules].find(rule => rule.selectorText && rule.selectorText.indexOf(name) !== -1));
     result.forEach(x => { if (x) x.style.visibility = ''; });
     return result.reduce((x, y) => x && y);
   });
