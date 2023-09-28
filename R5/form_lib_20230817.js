@@ -48,7 +48,7 @@ class InputObjects {
 
 class InputObjectsByName {
   constructor() {
-    const maxPageNum = 20;
+    const maxPageNum = 50;
     this.objList = [];
     this.pageList = [...Array(maxPageNum)].map(v => []);
   }
