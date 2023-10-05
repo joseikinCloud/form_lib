@@ -417,7 +417,10 @@ function setN(...args) {
 function getP(name) {
   return inputObjects.getLengthOfPageListByName(name);
 }
-function toHan(x) { return x.replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[－]/g, "-"); }
+function toHan(input) {
+  if (typeof input !== 'string') return '';
+  return input.replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[－]/g, "-");
+}
 function isCheckBox(id) {
   return $('#' + id).prop('tagName') === 'INPUT' && $('#' + id).attr('type') === 'checkbox';
 }
@@ -430,6 +433,9 @@ function getSelector(name, index = undefined) {
 }
 function makeSelector(names) {
   return names.map(name => getSelector(name)).filter(v => v).join();
+}
+function getLabelSelector(name, index = undefined) {
+  return getIds(name, index).map(id => '#label' + id).join();
 }
 function getObjectName(evt) {
   const splitId = evt.currentTarget.id.split('_');
