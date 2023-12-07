@@ -73,6 +73,7 @@ class PageList {
   initialize() {
     this.list = $(`[id^="iftc_cf_page_"]`);
     this.addPages = this.getIndexOfAddPages();
+    this.frontPages = this.getIndexOfFrontPages();
   }
   indexToSelector(index) {
     return this.list.eq(index);
@@ -87,6 +88,30 @@ class PageList {
         return false;
       }).filter(v => v !== false);
     return ret;
+  }
+  getIndexOfFrontPages() {
+    const tmp = new Set();
+    const notFrontPageWord = ['hidden', 'rear'];
+    const ret = [...this.list]
+      .map(v => {
+        return {
+          id: v.id,
+          class: [...v.classList.values()].find(s => s.indexOf('iftc_cf_form_') > -1)
+        }
+      }).map((obj, i) => {
+        if (notFrontPageWord.map(w => obj.class.indexOf(w) > -1).reduce((a, b) => a || b)) return false;
+        if (tmp.has(obj.class)) return false;
+        tmp.add(obj.class);
+        return i + 1;
+      }).filter(v => v !== false);
+    return ret;
+  }
+  isFrontPage(units) {
+    return units.map(unit => {
+      const isFront = this.frontPages.some(v => unit === v);
+      if (!isFront) console.warn(`ユニット番号 ${unit} は隠しページまたは裏面なのでアイコンまたはボタンを表示できません。`);
+      return isFront;
+    }).reduce((a, b) => a || b);
   }
 }
 
@@ -107,11 +132,11 @@ class IconObjects {
       this.setPages('acrossYears', [2]);
       this.setMargin('acrossYears', margin, margin);
     }
-    if (Array.isArray(iconSetting.addPage) && iconSetting.addPage.length !== 0) {
+    if (Array.isArray(iconSetting.addPage) && iconSetting.addPage.length !== 0 && pageList.isFrontPage(iconSetting.addPage)) {
       this.setPages('addPage', iconSetting.addPage);
       this.setMargin('addPage', margin, margin);
     }
-    if (Array.isArray(iconSetting.inputEmployees) && iconSetting.inputEmployees.length !== 0) {
+    if (Array.isArray(iconSetting.inputEmployees) && iconSetting.inputEmployees.length !== 0 && pageList.isFrontPage(iconSetting.inputEmployees)) {
       this.setPages('inputEmployees', iconSetting.inputEmployees);
       this.setMargin('inputEmployees', margin + fontSize * 10, margin);
     }
@@ -123,8 +148,6 @@ class IconObjects {
     this.setPages('csvNum', [2]);
     this.setMargin('csvNum', 595 - margin - (this.list.csvNum.string.length + 2) * fontSize, margin);
 
-
-    var style = document.createElement("style");
     Object.keys(this.list).forEach(key => {
       if (!this.list[key].pages) return;
       const csvDiv = $('<div>');
@@ -153,6 +176,12 @@ class IconObjects {
       });
     });
   }
+  isFrontPage(units) {
+    units.some(unit => {
+      pageList.indexToSelector(unit - 1);
+    });
+  }
+
   setPages(name, units) {
     if (!Array.isArray(units) || units.length === 0) return;
     this.list[name].pages = units.map(unit => pageList.indexToSelector(unit - 1));
@@ -824,7 +853,7 @@ function createCSVLabel() {
     callToggleCSVLabel();
   });
   const xmlDataMap = JSON.parse($('input[name="xmlDataMap"]').val());
-  const csvObjs = Object.keys(xmlDataMap).filter(key => {
+  const allCsvObj = Object.keys(xmlDataMap).filter(key => {
     return xmlDataMap[key].split('_')[0] === 'OBJ';
   }).map(key => key);
   const cssPrp = {
@@ -838,27 +867,30 @@ function createCSVLabel() {
     'justify-content': 'center',
     'align-items': 'center'
   };
-  // CSV項目の中で hidden に設定されているオブジェクトを探す
-  const hiddenObj = csvObjs.map((csv, i) => {
+  // CSV項目の中で hidden に設定されているオブジェクトを udefined に設定する。
+  const visibleObj = allCsvObj.map((csv, i) => {
     const isHidden = [...document.styleSheets].some(ss => {
       return [...ss.cssRules].some(rule => rule.selectorText && rule.selectorText.indexOf(csv) !== -1 && rule.style.visibility === 'hidden');
     });
     return isHidden ? undefined : csv;
   });
-  hiddenObj.forEach((csv, i) => {
+  visibleObj.forEach((csv, i) => {
     if (csv === undefined) return;
-    const csvDiv = ['width', 'left', 'top', 'visibility'].reduce((target, cur) => {
-      if (cur === 'visibility') target.css(cur, 'hidden');
-      else target.css(cur, $(getSelector(csv)).css(cur));
-      return target;
-    }, $('<div>'));
-    const fontSize = Math.min(($(getSelector(csv)).css('width').split('px')[0] - 2) / (i.toString().length), $(getSelector(csv)).css('height').split('px')[0] - 2);
-    csvDiv.css('line-height', `${$(getSelector(csv)).css('height').split('px')[0]}px`);
-    csvDiv.css('font-size', `${fontSize}px`);
-    csvDiv.addClass('csv-num');
-    Object.keys(cssPrp).forEach(key => csvDiv.css(key, cssPrp[key]));
-    csvDiv.text(i + 1);
-    $(getSelector(csv)).after(csvDiv);
+    $(getSelector(csv)).each((_, elm) => {
+      const csvDiv = ['width', 'left', 'top', 'visibility'].reduce((target, cur) => {
+        if (cur === 'visibility') target.css(cur, 'hidden');
+        else target.css(cur, $(elm).css(cur));
+        return target;
+      }, $('<div>'));
+      const fontSize = Math.min(($(elm).css('width').split('px')[0]) / ((i + 1).toString().length), $(elm).css('height').split('px')[0] - 2);
+      csvDiv.css('line-height', `${$(elm).css('height').split('px')[0] - 2}px`);
+      csvDiv.css('padding', `2px 0px 0px`);
+      csvDiv.css('font-size', `${fontSize}px`);
+      csvDiv.addClass('csv-num');
+      Object.keys(cssPrp).forEach(key => csvDiv.css(key, cssPrp[key]));
+      csvDiv.text(i + 1);
+      $(elm).after(csvDiv);
+    });
   });
 }
 
