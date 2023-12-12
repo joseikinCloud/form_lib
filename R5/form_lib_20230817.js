@@ -149,30 +149,32 @@ class IconObjects {
     this.setMargin('csvNum', 595 - margin - (this.list.csvNum.string.length + 2) * fontSize, margin);
 
     Object.keys(this.list).forEach(key => {
-      if (!this.list[key].pages) return;
+      const target = this.list[key];
+      if (!target.pages) return;
       const csvDiv = $('<div>');
       csvDiv.prop('type', 'button');
       csvDiv.prop('tabindex', '-1');
-      csvDiv.css('cursor', this.list[key].iconType === 'button' ? 'pointer' : 'default');
+      csvDiv.css('cursor', target.iconType === 'button' ? 'pointer' : 'default');
       csvDiv.css('font-weight', 'bold');
-      csvDiv.css('font-family', 'ヒラギノ角ゴ');
+      csvDiv.css('font-family', 'メイリオ');
       csvDiv.css('padding', `2pt 0pt`);
       csvDiv.css('font-size', `${fontSize}pt`);
-      csvDiv.css('color', this.list[key].iconType === 'label' ? this.list[key].color : 'white');
-      csvDiv.css('background', this.list[key].iconType === 'label' ? 'white' : this.list[key].color);
-      csvDiv.css('border', this.list[key].iconType === 'label' ? `solid 2px ${this.list[key].color}` : 'white');
+      csvDiv.css('color', target.iconType === 'label' ? target.color : 'white');
+      csvDiv.css('background', target.iconType === 'label' ? 'white' : target.color);
+      csvDiv.css('border', target.iconType === 'label' ? `solid 2px ${target.color}` : 'white');
       csvDiv.css('border-radius', '5px');
       csvDiv.css('text-align', 'center');
       csvDiv.css('display', 'inline-block');
-      csvDiv.css('width', `${(this.list[key].string.length + 2) * fontSize}pt`);
-      csvDiv.attr('id', this.list[key].name);
+      csvDiv.css('width', `${(target.string.length + 2) * fontSize}pt`);
+      csvDiv.attr('id', target.name);
       csvDiv.css('position', 'absolute');
-      csvDiv.text(this.list[key].string);
-      this.list[key].pages.forEach(page => {
+      csvDiv.text(target.string);
+      target.pages.forEach(page => {
+        const $tmp = csvDiv.clone();
         this.setPosition(key, page);
-        csvDiv.css('top', this.list[key].top);
-        csvDiv.css('left', this.list[key].left);
-        page.children('[class~="iftc_cf_inputitems"]').append(csvDiv);
+        $tmp.css('top', target.top);
+        $tmp.css('left', target.left);
+        page.children('[class~="iftc_cf_inputitems"]').append($tmp);
       });
     });
   }
@@ -795,7 +797,7 @@ function onLoadIcon(iconSetting) {
 }
 
 function onClickCopyPageButton() {
-  $('#COPY_PAGE_BUTTON').on('click', (evt) => {
+  $(document).on('click','#COPY_PAGE_BUTTON', (evt) => {
     const parent = $(evt.currentTarget).parent();
     const page = parent.attr('id').split('_')[3] - 1;
     inputObjects.getObjListByPage(page).forEach(obj => {
@@ -869,22 +871,38 @@ function createCSVLabel() {
   };
   // CSV項目の中で hidden に設定されているオブジェクトを udefined に設定する。
   const visibleObj = allCsvObj.map((csv, i) => {
+    if (!inputObjects.objExists(csv)) {
+      console.warn(`CSV番号 ${i + 1} 番: ${csv} は存在しないオブジェクト`);
+      return undefined;
+    }
     const isHidden = [...document.styleSheets].some(ss => {
       return [...ss.cssRules].some(rule => rule.selectorText && rule.selectorText.indexOf(csv) !== -1 && rule.style.visibility === 'hidden');
     });
-    return isHidden ? undefined : csv;
+    if (isHidden) {
+      console.warn(`CSV番号 ${i + 1} 番: ${csv} は欄外のオブジェクト`);
+      return undefined;
+    }
+    return csv;
   });
   visibleObj.forEach((csv, i) => {
     if (csv === undefined) return;
+    const maxFontSizePt = '14pt';
+    const tmpDiv = $('<div>');
+    tmpDiv.css('font-size', maxFontSizePt);
+    tmpDiv.attr('id', 'tmp-div')
+    $('#iftc_cf_page_1').after(tmpDiv);
+    const maxFontSizePx = Number($('#tmp-div').css('font-size').split('px')[0]);
     $(getSelector(csv)).each((_, elm) => {
       const csvDiv = ['width', 'left', 'top', 'visibility'].reduce((target, cur) => {
         if (cur === 'visibility') target.css(cur, 'hidden');
         else target.css(cur, $(elm).css(cur));
         return target;
       }, $('<div>'));
-      const fontSize = Math.min(($(elm).css('width').split('px')[0]) / ((i + 1).toString().length), $(elm).css('height').split('px')[0] - 2);
-      csvDiv.css('line-height', `${$(elm).css('height').split('px')[0] - 2}px`);
-      csvDiv.css('padding', `2px 0px 0px`);
+      const minFontSize = Math.min(($(elm).css('width').split('px')[0]) / ((i + 1).toString().length), $(elm).css('height').split('px')[0] - 2);
+      const fontSize = Math.min(minFontSize, maxFontSizePx);
+      const topPadding = 2;
+      csvDiv.css('line-height', `${$(elm).css('height').split('px')[0] - topPadding}px`);
+      csvDiv.css('padding', `${topPadding}px 0px 0px`);
       csvDiv.css('font-size', `${fontSize}px`);
       csvDiv.addClass('csv-num');
       Object.keys(cssPrp).forEach(key => csvDiv.css(key, cssPrp[key]));
@@ -900,7 +918,9 @@ function makeArray(num, prefix, first, deference) {
 
 function showDocInfo() {
   console.log(`フォーム名：${$('input[name="jobName"]').val()} `);
-  console.log(`ライブラリ名：${$('script[src*="form_lib"]').attr('src').split('/').find(v => v.indexOf('form_lib_') > -1).split('?')[0]} `);
+  const libUrl = $('script[src*="form_lib"]').attr('src').split('?')[0].split('/');
+  console.log(`ライブラリ名：${libUrl.find(v => v.indexOf('form_lib_') > -1)} `);
+  console.log(`ライブラリVer：${libUrl[libUrl.length - 2]} `);
 }
 
 function initializeInstances() {
