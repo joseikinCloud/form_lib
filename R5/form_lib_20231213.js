@@ -263,6 +263,10 @@ class RadioButtons {
     return this?.list?.[name] !== undefined;
   }
   setMark(name, mark, unmark) {
+    if (this.list[name] === undefined) {
+      console.warn(`setMark: ${name} は存在しないラジオボタングループ`);
+      return;
+    }
     this.list[name].setMark(mark, unmark);
   }
 }
@@ -513,8 +517,10 @@ class DocumentEmployeesContents {
     Object.keys(employees.list).forEach(key => {
       [...Array(employees.max ?? 0)].forEach((_, i) => {
         let obj = employees.list[key](i);
+        if (!obj) return;
         if (Array.isArray(obj)) obj = obj[0];
-        if (obj.name !== undefined && (obj.page === undefined || obj.page < getP(obj.name)))
+        if (!obj?.name) return;
+        if (obj.page === undefined || obj.page < getP(obj.name))
           previousDocEmpContents[i][key] = getV(obj.name, obj.page);
       });
     });
@@ -528,6 +534,7 @@ class DocumentEmployeesContents {
         if (documentEmployees.contains(i, key)) {
           docEmpContents[i][key] = documentEmployees.getEmployeesValue(i, key);
           let objs = employees.list[key](i);
+          if (!objs) return;
           if (!Array.isArray(objs)) objs = [objs];
           objs.forEach(obj => documentEmployees.objNameSet.add(obj.name));
         }
@@ -541,6 +548,35 @@ class DocumentEmployeesContents {
   }
   countElm() {
     return this.list.length;
+  }
+}
+
+class DMXMapping {
+  constructor() {
+  }
+  initialize() {
+    this.xmlDataMap = JSON.parse($('input[name="xmlDataMap"]').val());
+    this.CSVObjList = Object.keys(this.xmlDataMap).filter(key => {
+      return this.xmlDataMap[key].split('_')[0] === 'OBJ';
+    }).map(key => key);
+    this.JSObjList = Object.keys(this.xmlDataMap).filter(key => {
+      return this.xmlDataMap[key].split('_')[0] === 'JS';
+    }).map(key => key);
+    this.JSObjList.forEach(obj => {
+      if (!inputObjects.objExists(obj)) console.warn(`DMXMapping: ${obj} は不要なマッピング`);
+    });
+  }
+  getCSVObjList() {
+    return this.CSVObjList;
+  }
+  getJSObjList() {
+    return this.JSObjList;
+  }
+  getUnmappedObjList() {
+    console.log('マッピングされてない項目');
+    inputObjects.getAllObjNameList().forEach(name => {
+      if (this.xmlDataMap[name] === undefined) console.log(`${name}`);
+    });
   }
 }
 
@@ -561,6 +597,7 @@ const documentEmployeesContents = { initialize: () => undefined };
 const pageList = new PageList();
 const iconObjects = new IconObjects();
 const lazyEvaluationFunctions = new LazyEvaluationFunctions();
+const dmxMapping = new DMXMapping();
 
 // 汎用関数
 function getV(name, index) {
@@ -795,8 +832,10 @@ function onLoadDocumentEmployeesList(employees) {
   Object.keys(employees.list).forEach(key => {
     [...Array(employees.max)].forEach((_, i) => {
       let objList = employees.list[key](i);
+      if (!objList) return;
       if (!Array.isArray(objList)) objList = [objList];
       objList.forEach(obj => {
+        if (!obj?.name) return;
         if (obj.page < inputObjects.getLengthOfPageListByName(obj.name) || obj.page === undefined)
           setV(obj.name, obj.page, docEmpContents.getEmployeesValue(i, key));
       });
@@ -867,10 +906,7 @@ function createCSVLabel() {
   $('#SHOW_CSV_NUM_BUTTON').on('click', (evt) => {
     callToggleCSVLabel();
   });
-  const xmlDataMap = JSON.parse($('input[name="xmlDataMap"]').val());
-  const allCsvObj = Object.keys(xmlDataMap).filter(key => {
-    return xmlDataMap[key].split('_')[0] === 'OBJ';
-  }).map(key => key);
+  const csvObjList = dmxMapping.getCSVObjList();
   const cssPrp = {
     'background': 'rgba(68,201,194,1)',
     'color': 'white',
@@ -883,7 +919,7 @@ function createCSVLabel() {
     'align-items': 'center'
   };
   // CSV項目の中で hidden に設定されているオブジェクトを udefined に設定する。
-  const visibleObj = allCsvObj.map((csv, i) => {
+  const visibleObj = csvObjList.map((csv, i) => {
     if (!inputObjects.objExists(csv)) {
       console.warn(`CSV番号 ${i + 1} 番: ${csv} は存在しないオブジェクト`);
       return undefined;
@@ -935,7 +971,11 @@ function showDocInfo() {
   const libUrl = $('script[src*="form_lib"]').attr('src').split('?')[0].split('/');
   console.log(`ライブラリ名：${libUrl.find(v => v.indexOf('form_lib_') > -1)} `);
   const ver = libUrl.find(v => v.indexOf('@') > -1);
-  console.log(`ライブラリVer：${ver === undefined ? 'なし' : ver} `);
+  console.log(`ライブラリVer: ${ver === undefined ? 'なし' : ver} `);
+}
+
+function getUnmappedObjList() {
+  dmxMapping.getUnmappedObjList();
 }
 
 function initializeInstances() {
@@ -944,4 +984,5 @@ function initializeInstances() {
   companyMaster.initialize();
   documentEmployees.initialize();
   pageList.initialize();
+  dmxMapping.initialize();
 }
