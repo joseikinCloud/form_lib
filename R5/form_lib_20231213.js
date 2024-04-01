@@ -3,16 +3,11 @@ class InputObjects {
     const maxPageNum = 50;
     this.objListByPage = [...Array(maxPageNum)].map(() => []);
     this.list = allObj.reduce((acc, id) => {
-      // '_ITEXT1003_R1_4_3'
       const target = acc;
       const splitId = id.split('_');
-      // ['','ITEXT1003','R1','4','3']
       splitId.shift(); splitId.pop();
-      // ['ITEXT1003','R1','4']
       const page = +splitId.pop();
-      // ['ITEXT1003','R1']
       const objName = splitId.join('_');
-      // 'ITEXT1003_R1'
       this.objListByPage[page].push({ name: objName, id });
       if (!target[objName]) target[objName] = new InputObjectsByName();
       target[objName].register(id, page);
@@ -728,7 +723,7 @@ const dmxMapping = new DMXMapping();
 function getV(name, index) {
   if (radioButtons.radioExists(name)) return radioButtons.list[name].getRadioButtonValue(index);
   const id = inputObjects.getIdsByIndex(name, index ?? 0)[0];
-  if (isCheckBox(id)) $(`#${id}`).prop('checked');
+  if (isCheckBox(id)) return $(`#${id}`).prop('checked');
   return $(`#${id}`).val();
 }
 // eslint-disable-next-line no-unused-vars
