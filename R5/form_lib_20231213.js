@@ -906,7 +906,7 @@ function onLoadCompanyMaster() {
   setV('JGYNSHBIRTHDAY_M', getMaster('JGYNSHBIRTHDAY').slice(4, 6));
   setV('JGYNSHBIRTHDAY_D', getMaster('JGYNSHBIRTHDAY').slice(6, 8));
   Object.keys(companyMaster).forEach(type => {
-    if ((type === 'SHRSH' && getMaster('TENANT_ID') === getMaster('CREATED_TENANT_ID')) || (inputObjects.objExists('IS_MANUAL') && getCheckValue('IS_MANUAL'))) return;
+    if (type === 'SHRSH' && (getMaster('TENANT_ID') === getMaster('CREATED_TENANT_ID') || (inputObjects.objExists('IS_MANUAL') && getCheckValue('IS_MANUAL')))) return;
     companyMaster.setAllMasterByType(type);
   });
   if (getMaster('TENANT_ID') !== getMaster('CREATED_TENANT_ID') && inputObjects.objExists('IS_MANUAL')) {
