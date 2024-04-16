@@ -1058,8 +1058,15 @@ function createCSVLabel() {
       console.warn(`CSV番号 ${i + 1} 番: ${csv} は存在しないオブジェクト`);
       return undefined;
     }
-    const isHidden = [...document.styleSheets].some(ss => [...ss.cssRules]
-      .some(rule => rule.selectorText && rule.selectorText.indexOf(csv) !== -1 && rule.style.visibility === 'hidden'));
+    const isHidden = [...document.styleSheets].some(ss => [...ss.cssRules].some(rule => {
+      if (!rule.selectorText) return false;
+      const splitSelectorText = rule.selectorText.split('_');
+      splitSelectorText.shift();
+      splitSelectorText.pop();
+      splitSelectorText.pop();
+      const name = splitSelectorText.join('_');
+      return name === csv && rule.style.visibility === 'hidden';
+    }));
     if (isHidden) {
       console.warn(`CSV番号 ${i + 1} 番: ${csv} は欄外のオブジェクト`);
       return undefined;
