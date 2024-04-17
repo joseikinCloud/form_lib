@@ -1138,7 +1138,8 @@ function setValueFromOldObjToNewObj(...args) {
   const suffix = i => (isRadio ? `_R${i + 1}` : '');
   const loopCount = isRadio ? radioButtons.countButtons(oldObj) : 1;
   [...Array(loopCount)].forEach((_, i) => {
-    setV(`${newObj}${suffix(i)}`, newObjIndex, getV(`${oldObj}${suffix(i)}`, oldObjIndex));
+    if (getV(`${newObj}${suffix(i)}`, newObjIndex) === '') setV(`${newObj}${suffix(i)}`, newObjIndex, getV(`${oldObj}${suffix(i)}`, oldObjIndex));
+    else setV(`${oldObj}${suffix(i)}`, oldObjIndex, getV(`${newObj}${suffix(i)}`, newObjIndex));
   });
   const selector = isRadio
     ? makeSelector(radioButtons.getRadioGroup(newObj).getAllButtonNameList()) : getSelector(newObj);
