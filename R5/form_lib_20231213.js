@@ -218,11 +218,13 @@ class IconObjects {
         if (this.iconList[icon].iconType === 'label') $labelsDiv.append($tmp);
         if (this.iconList[icon].iconType === 'button') {
           $tmp.css('float', 'right');
+          $tmp.css('pointer-events', 'auto');
           $buttonsDiv.append($tmp);
         }
       });
       const $iconsDiv = $('<div>');
       $iconsDiv.attr('id', 'ICONS_DIV');
+      $iconsDiv.css('pointer-events', 'none');
       $iconsDiv.css('display', 'flex');
       $iconsDiv.css('width', '595pt');
       $iconsDiv.css('height', '40pt');
