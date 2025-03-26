@@ -65,6 +65,8 @@
             {
                 "argsIgnorePattern": "^_$"
             }
-        ]
+        ],
+        "lines-between-class-members":"off",
+        "no-prototype-builtins":"off"
     }
 }
