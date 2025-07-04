@@ -292,19 +292,19 @@ class EmployeesContents {
     this.#list.forEach((_, i) => {
       Object.keys(employees.list).forEach(key => {
         if (Employees.contains(i, key)) {
-          const objs = [employees.list[key](i)].flat();
-          const value = Employees.getEmployeesValue(i, key);
-          this.#list[i][key] = objs[0].func ? objs[0].func(value, i) : value;
-          objs.forEach(obj => Employees.objNameSet.add(obj.name));
+          const objList = [employees.list[key](i)].flat();
+          this.#list[i][key] = Employees.getEmployeesValue(i, key);
+          objList.forEach(obj => Employees.objNameSet.add(obj.name));
         }
       });
     });
     // 書類の内容を上書き
     Object.keys(employees.list).forEach(key => {
       [...Array(employees.max)].forEach((_, i) => {
-        const value = this.#getEmployeesValue(i, key);
+        const rawValue = this.#getEmployeesValue(i, key);
         const objList = [employees.list[key](i)].flat();
         objList.forEach(obj => {
+          const value = (obj.func && this.#list[i].id) ? obj.func(rawValue) : rawValue;
           if (obj?.name && (obj.page === undefined || obj.page < +InputObjects.getLengthOfPageListByName(obj.name))) InputObjects.setValueByIndex(obj.name, obj.page, value);
         });
       });
@@ -1217,6 +1217,11 @@ function shouldRunScriptOnLoad() {
   console.log('ロジックが実行されません、実行する場合は下記のコマンドを実行して保存し、リロードしてください。');
   console.log('enableScriptOnload()');
   return false;
+}
+
+// eslint-disable-next-line no-unused-vars
+function getEmployeesValue(index, key) {
+  return Employees.getEmployeesValue(index, key);
 }
 // Load 時実行
 // eslint-disable-next-line no-unused-vars
