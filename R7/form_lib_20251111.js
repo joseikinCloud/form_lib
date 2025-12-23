@@ -180,7 +180,7 @@ class CompanyMaster {
     const value = CompanyMaster.getMaster(name);
     const tenantID = InputObjects.getValue('TENANT_ID');
     const lastTenantID = InputObjects.getValue('LAST_TENANT_ID');
-    if (value === '' && tenantID === lastTenantID) return;
+    if (value === '' && tenantID === lastTenantID && name !== 'IS_YUCHO') return;
     InputObjects.setValueByIndex(name, value);
   }
 
