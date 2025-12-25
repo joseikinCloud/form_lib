@@ -113,7 +113,7 @@ class CompanyMaster {
     INDUSTRIES_TYPE: 'INDUSTRIES',
     LABOR_DELEGATE: 'WORKING_REPRESENTATIVE_FULL_NAM',
     CUTOFFDATE: 'CUTOFF_DATE',
-    PAYMENT_DATE: 'PAYMENT_DATE',
+    PAYMENTDATE: 'PAYMENT_DATE',
     JGYNSHBIRTHDAY: 'REPRESENTATIVE_BIRTHDAY',
     FOUNDATIONYEAR: 'FOUNDATION_YEAR',
     FINANCIALMONTH: 'FINANCIAL_MONTH',
@@ -1439,7 +1439,7 @@ function showDocInfo() {
   const ver = libUrl.find(v => v.indexOf('@') > -1);
   console.log(`ライブラリVer：${ver === undefined ? 'なし' : ver} `);
   const amountReceived = InputObjects.getValue('AMOUNT_RECEIVED');
-  console.log(`支給額：${amountReceived === '' ? '未入力' : `${Number(amountReceived).toLocaleString()} 円`} `);
+  console.log(`支給額：${amountReceived === '' ? '未入力' : `${isNaN(amountReceived) ? amountReceived : Number(amountReceived).toLocaleString()} 円`} `);
   const setTargetUserName = InputObjects.getValue('TARGET_USER_NAME');
   console.log(`対象者氏名：${setTargetUserName === '' ? '未入力' : setTargetUserName} `);
 }
