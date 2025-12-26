@@ -139,7 +139,7 @@ class CompanyMaster {
     JGYNSHBIRTHDAY_D: () => InputObjects.getValue('JGYNSHBIRTHDAY').slice(6, 8),
     SHRSH_NUM: () => InputObjects.getValue('LSS_ATTORNEY_REGIST_NUMBER') || InputObjects.getValue('S_LSS_ATTORNEY_REGIST_NUMBER'),
     ROUKI_NAME: () => InputObjects.getValue('LSIO').split('労働基準監督署')[0],
-    CAPITAL_STOCK_PER10K: () => Math.floor(InputObjects.getValue('CAPITAL') / 10000),
+    CAPITAL_STOCK_PER10K: () => (InputObjects.getValue('CAPITAL') === '' ? '' : Number(Math.floor(InputObjects.getValue('CAPITAL') / 10000)).toLocaleString('ja-JP')),
   };
 
   static #withHyphen = {
