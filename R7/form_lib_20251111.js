@@ -140,6 +140,7 @@ class CompanyMaster {
     SHRSH_NUM: () => InputObjects.getValue('LSS_ATTORNEY_REGIST_NUMBER') || InputObjects.getValue('S_LSS_ATTORNEY_REGIST_NUMBER'),
     ROUKI_NAME: () => InputObjects.getValue('LSIO').split('労働基準監督署')[0],
     CAPITAL_STOCK_PER10K: () => (InputObjects.getValue('CAPITAL') === '' ? '' : Number(Math.floor(InputObjects.getValue('CAPITAL') / 10000)).toLocaleString('ja-JP')),
+    BANK_NUM: () => CompanyMaster.getBankNum(),
   };
 
   static #withHyphen = {
@@ -158,6 +159,17 @@ class CompanyMaster {
     EIFN: '--',
     LIN: '--',
   };
+
+  static getBankNum() {
+    const isYucho = InputObjects.getValue('IS_YUCHO');
+    if (!isYucho) return InputObjects.getValue('ACCOUNT_NUMBER');
+    const yuchoNum = InputObjects.getValue('JP_POST_NUMBER');
+    if (yuchoNum.length === 7) return `0${yuchoNum.slice(0, -1)}`;
+    if (yuchoNum.length === 8) return yuchoNum.slice(0, -1);
+    if (yuchoNum.length === 6) return `0${yuchoNum}`;
+    if (yuchoNum.length === 5) return `00${yuchoNum}`;
+    return '';
+  }
 
   static trimHyphen(name) {
     const value = InputObjects.getValue(CompanyMaster.toMasterName(name));
