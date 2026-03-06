@@ -430,6 +430,14 @@ class IconObjects {
       isEnabled: () => true,
       getPages: () => [2],
     },
+    downloadCSV: {
+      name: 'DOWNLOAD_CSV_BUTTON',
+      string: 'CSVダウンロード',
+      color: 'rgba(68,201,194,1)',
+      iconType: 'button',
+      isEnabled: () => true,
+      getPages: () => [2],
+    },
   };
 
   static showIcon(iconSetting) {
@@ -1308,6 +1316,73 @@ function setPlaceholder(name, text) {
   // ([['ITEXT1000', 'yyyy'], ['ITEXT1001', 'mm'], ['ITEXT1002', 'dd']])
   if (Array.isArray(name) && text === undefined) name.forEach(([n, t]) => $(getSelector(n)).attr('placeholder', t));
 }
+
+// eslint-disable-next-line no-unused-vars
+function downloadCSV(fileName = `様式入力データ_${new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(/[^\d]/g, '')}.csv`) {
+  const objNameList = DMXMapping.getCSVObjList();
+  if (!objNameList || objNameList.length === 0) {
+    console.warn('CSV出力対象のオブジェクトが見つかりませんでした。');
+    return;
+  }
+
+  // 1行目に連番（見出し）、2行目に値を入れる
+  const header = objNameList.map((_, index) => index + 1);
+  const values = objNameList.map(name => {
+    const val = InputObjects.getValueByIndex(name);
+    // 値にカンマや改行、ダブルクォーテーションが含まれる場合はエスケープする
+    if (typeof val === 'string' && (val.includes(',') || val.includes('\n') || val.includes('"'))) {
+      return `"${val.replace(/"/g, '""')}"`;
+    }
+    return val;
+  });
+
+  const data = [header, values];
+  const csvContent = data.map(row => row.join(',')).join('\n');
+
+  // Helper to trigger the download
+  const triggerDownload = (blob) => {
+    const a = document.createElement('a');
+    const url = (window.URL || window.webkitURL).createObjectURL(blob);
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    (window.URL || window.webkitURL).revokeObjectURL(url);
+  };
+
+  // Convert to Shift-JIS and download
+  const encodeAndDownload = () => {
+    // ゼロ幅文字（見た目は空に見えるがSJIS非対応の文字）を空文字列に変換する
+    // U+115F: HANGUL CHOSEONG FILLER, U+200B: ZERO WIDTH SPACE,
+    // U+200C: ZERO WIDTH NON-JOINER, U+200D: ZERO WIDTH JOINER, U+FEFF: BOM
+    const ZERO_WIDTH_CHARS = /[\u115F\u200B\u200C\u200D\uFEFF]/g;
+    const sanitized = csvContent.replace(ZERO_WIDTH_CHARS, '');
+    const strArray = [...sanitized].map(c => c.codePointAt(0));
+    const sjisBuffer = Encoding.convert(strArray, {
+      to: 'SJIS',
+      from: 'UNICODE'
+    });
+    const blob = new Blob([new Uint8Array(sjisBuffer)], { type: 'text/csv' });
+    triggerDownload(blob);
+  };
+
+  // Dynamically load encoding.js if not available
+  if (typeof Encoding !== 'undefined') {
+    encodeAndDownload();
+  } else {
+    $.getScript('https://cdnjs.cloudflare.com/ajax/libs/encoding-japanese/2.1.0/encoding.min.js')
+      .done(() => {
+        encodeAndDownload();
+      })
+      .fail(() => {
+        console.error('encoding.js の読み込みに失敗したため、UTF-8でダウンロードします。');
+        const bom = new Uint8Array([0xef, 0xbb, 0xbf]);
+        const blob = new Blob([bom, csvContent], { type: 'text/csv' });
+        triggerDownload(blob);
+      });
+  }
+}
 // Load 時実行
 // eslint-disable-next-line no-unused-vars
 function onLoadCompanyMaster() {
@@ -1351,6 +1426,7 @@ function onLoadIcon(iconSetting) {
   IconObjects.showIcon(iconSetting);
   onClickCopyPageButton();
   createCSVLabel();
+  onClickDownloadCSVButton();
 }
 
 // eslint-disable-next-line no-unused-vars
@@ -1439,6 +1515,13 @@ function createCSVLabel() {
       csvDiv.text(i + 1);
       $(elm).after(csvDiv);
     });
+  });
+}
+
+// eslint-disable-next-line no-unused-vars
+function onClickDownloadCSVButton() {
+  $(document).on('click', '#DOWNLOAD_CSV_BUTTON', () => {
+    downloadCSV();
   });
 }
 
