@@ -352,6 +352,19 @@ class EmployeesContents {
         }
       });
     });
+    // 初回ロード時に this.#list の id が未設定なら、現在の従業員リストから補完する。
+    const currentEmployees = Employees.getList();
+    const existingIds = new Set(this.#list
+      .map(v => v?.id)
+      .filter(id => id !== undefined && id !== null && id !== ''));
+    this.#list.forEach((employee, i) => {
+      if (employee?.id !== undefined && employee.id !== null && employee.id !== '') return;
+      const candidateId = currentEmployees?.[i]?.id;
+      if (candidateId === undefined || candidateId === null || candidateId === '') return;
+      if (existingIds.has(candidateId)) return;
+      this.#list[i].id = candidateId;
+      existingIds.add(candidateId);
+    });
     // 書類の内容を上書き
     Object.keys(employees.list).forEach(key => {
       [...Array(employees.max)].forEach((_, i) => {
