@@ -5,6 +5,7 @@ function main() {
   if (getV('DOCUMENT_STATUSES-STATUS') === '3') return;
   LazyEvaluationFunctions.setFunction(onLoad);
   LazyEvaluationFunctions.setFunction(callCompanyMasterFunctions);
+  LazyEvaluationFunctions.setFunction(focusSetting);
   executeFuncitonsOnload();
   initialize();
   onLoad();
